@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Solar System (Offline)</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script src="three.min.js"></script>
+<script src="OrbitControls.js"></script>
+<script>
+  // Scene, camera, renderer
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+
+  const camera = new THREE.PerspectiveCamera(
+    45, window.innerWidth / window.innerHeight, 0.1, 1000
+  );
+  camera.position.set(0, 50, 120);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // OrbitControls
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+  // Sun as a light source
+  const sunLight = new THREE.PointLight(0xffffff, 2, 500);
+  sunLight.position.set(0, 0, 0);
+  scene.add(sunLight);
+
+  // Sun
+  const sunGeometry = new THREE.SphereGeometry(10, 32, 32);
+  const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+  const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+  scene.add(sun);
+
+  // Planets: [name, radius, orbit radius, color, orbit speed]
+  const planets = [
+    { name: "Mercury", radius: 1, orbit: 16, color: 0xaaaaaa, speed: 0.04 },
+    { name: "Venus",   radius: 1.5, orbit: 22, color: 0xffcc99, speed: 0.03 },
+    { name: "Earth",   radius: 1.7, orbit: 30, color: 0x3399ff, speed: 0.025 },
+    { name: "Mars",    radius: 1.3, orbit: 38, color: 0xff3300, speed: 0.022 },
+    { name: "Jupiter", radius: 3.5, orbit: 48, color: 0xffcc66, speed: 0.018 },
+    { name: "Saturn",  radius: 3, orbit: 58, color: 0xffff99, speed: 0.015 },
+    { name: "Uranus",  radius: 2.5, orbit: 65, color: 0x66ccff, speed: 0.012 },
+    { name: "Neptune", radius: 2.5, orbit: 72, color: 0x3366cc, speed: 0.01 }
+  ];
+
+  // Store planet meshes and their orbit angles
+  const planetMeshes = [];
+
+  // Create planet meshes
+  planets.forEach((p, i) => {
+    const geometry = new THREE.SphereGeometry(p.radius, 32, 32);
+    const material = new THREE.MeshStandardMaterial({ color: p.color });
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    // Orbit ring
+    const orbitGeometry = new THREE.RingGeometry(p.orbit-0.1, p.orbit+0.1, 64);
+    const orbitMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.15
+    });
+    const orbitRing = new THREE.Mesh(orbitGeometry, orbitMaterial);
+    orbitRing.rotation.x = Math.PI / 2;
+    scene.add(orbitRing);
+
+    planetMeshes.push({ mesh, orbit: p.orbit, speed: p.speed, angle: Math.random() * Math.PI * 2 });
+  });
+
+  // Animation loop
+  function animate() {
+    requestAnimationFrame(animate);
+
+    planetMeshes.forEach(p => {
+      p.angle += p.speed;
+      p.mesh.position.set(
+        Math.cos(p.angle) * p.orbit,
+        0,
+        Math.sin(p.angle) * p.orbit
+      );
+    });
+
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>
